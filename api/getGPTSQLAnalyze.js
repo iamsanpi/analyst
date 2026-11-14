@@ -5,11 +5,15 @@ const router = express.Router();
 router.post('/', async (req, res) => {
   try {
     const { data, fieldExplanations, userInput, sqlQuery } = req.body;
+    const apiKey = process.env.MOONSHOT_API_KEY;
+    if (!apiKey || !apiKey.trim()) {
+      return res.status(503).json({ error: 'AI service is not configured' });
+    }
     const response = await fetch('https://api.moonshot.cn/chat', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer sk-Q6KKyhUNwMuUBrU3J6UFWR8t9YSNrzD4IQy1fO8zrZy6rXBd',
+        'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
         model: 'chat',
@@ -31,7 +35,7 @@ router.post('/', async (req, res) => {
     const result = await response.json();
     res.json(result);
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Moonshot request failed');
     res.status(500).json({ error: 'An error occurred' });
   }
 });
