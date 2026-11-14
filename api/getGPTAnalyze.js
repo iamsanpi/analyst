@@ -1,7 +1,5 @@
 const { ConversationClient } = require('anthropic');
 
-const client = new ConversationClient({ apiKey: 'sk-Q6KKyhUNwMuUBrU3J6UFWR8t9YSNrzD4IQy1fO8zrZy6rXBd' });
-
 const dataAnalysisPrompt = `
 你是一个数据分析专家,接下来我会给你一些数据,请你分析这些数据并给出洞见和建议。
 要求:
@@ -11,7 +9,8 @@ const dataAnalysisPrompt = `
 4. 用markdown格式返回,不少于5条洞见或建议
 `;
 
-async function getGPTAnalyze(data) {
+async function getGPTAnalyze(data, apiKey) {
+  const client = new ConversationClient({ apiKey });
   const response = await client.sendMessage(dataAnalysisPrompt + JSON.stringify(data));
   return response.text;
 }
@@ -20,10 +19,14 @@ module.exports = async function (req, res) {
   const { data } = req.body;
 
   try {
-    const analysis = await getGPTAnalyze(data);
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey || !apiKey.trim()) {
+      return res.status(503).json({ error: 'AI service is not configured' });
+    }
+    const analysis = await getGPTAnalyze(data, apiKey);
     res.json({ analysis });
   } catch (error) {
-    console.error(error);
+    console.error('Anthropic request failed');
     res.status(500).json({ error: 'Failed to analyze data' });
   }
 };
